@@ -48,27 +48,23 @@ Each sample in the dataset contains:
 - Operating parameters (speed, load)
 - Fault information (defect size, type)
 
+## Data Processing Pipeline
 
+1. Signal Processing:
+   - Split raw signals into frames using librosa
+   - Calculate RMS for each frame
+   - Apply moving average smoothing
 
-## Repository Structure
+2. RUL Calculation:
+   - Use linear degradation pattern
+   - Normalize to range [1.0, 0.0]
+   - 1.0 represents healthy state
+   - 0.0 represents failure state
 
-```
-bearing-rul-prediction/
-├── models/                 # Model definitions
-│   ├── __init__.py
-│   ├── lstm_model.py      # LSTM model implementation
-│   └── rnn_model.py       # RNN model implementation
-├── utils/                 # Utility functions
-│   ├── __init__.py
-│   ├── data_processing.py # Data loading and preprocessing
-│   └── visualization.py   # Plotting and visualization
-├── results/               # Results and figures
-│   └── .gitkeep
-├── README.md              # This file
-├── LICENSE               # License file
-└── main.py               # Main script to run the pipeline
-```
-
+3. Sequence Creation:
+   - Create overlapping sequences for time series modeling
+   - Split into train/validation/test sets
+   - Maintain temporal order of sequences
 
 
 
@@ -114,23 +110,25 @@ Additional arguments:
 - `--frame_length`: Frame length for initial signal framing (default: 51200)
 - `--hop_length`: Hop length for initial signal framing (default: 12800)
 
-## Data Processing Pipeline
 
-1. Signal Processing:
-   - Split raw signals into frames using librosa
-   - Calculate RMS for each frame
-   - Apply moving average smoothing
+## Repository Structure
 
-2. RUL Calculation:
-   - Use linear degradation pattern
-   - Normalize to range [1.0, 0.0]
-   - 1.0 represents healthy state
-   - 0.0 represents failure state
-
-3. Sequence Creation:
-   - Create overlapping sequences for time series modeling
-   - Split into train/validation/test sets
-   - Maintain temporal order of sequences
+```
+bearing-rul-prediction/
+├── models/                 # Model definitions
+│   ├── __init__.py
+│   ├── lstm_model.py      # LSTM model implementation
+│   └── rnn_model.py       # RNN model implementation
+├── utils/                 # Utility functions
+│   ├── __init__.py
+│   ├── data_processing.py # Data loading and preprocessing
+│   └── visualization.py   # Plotting and visualization
+├── results/               # Results and figures
+│   └── .gitkeep
+├── README.md              # This file
+├── LICENSE               # License file
+└── main.py               # Main script to run the pipeline
+```
 
 ## Results
 
