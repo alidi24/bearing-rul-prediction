@@ -66,7 +66,7 @@ Each sample in the dataset contains:
 - Fault information (defect size, type)
 
 ### Source
-The original dataset is available at: [10.17632/h4df4mgrfb.3](10.17632/h4df4mgrfb.3)
+The original dataset is available at: [https://data.mendeley.com/datasets/h4df4mgrfb/3](https://data.mendeley.com/datasets/h4df4mgrfb/3)
 
 
 ## Getting Started
