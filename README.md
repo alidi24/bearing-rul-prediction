@@ -6,9 +6,6 @@ This repository contains a deep learning project for predicting the Remaining Us
 
 ## Project Overview
 
-Predicting the remaining useful life of mechanical components is a critical task in predictive maintenance. This project focuses on rolling element bearings, which are commonly used in rotating machinery and prone to degradation over time.
-
-The key highlights of this project:
 - Time series modeling of bearing degradation using RMS health indicators
 - Implementation of both RNN and LSTM architectures for comparison
 - Performance evaluation using MSE metric
@@ -22,6 +19,36 @@ The project treats the RUL prediction problem as a sequence-to-value regression 
 3. Apply moving average smoothing to RMS values
 4. Create sequences for time series modeling
 5. Train models to predict normalized RUL (1.0 -> 0.0)
+
+
+## Data
+
+![Degradation Process](degradation_process.png)
+
+The project uses the "alidi/bearing-run2failure-unsw" dataset from Hugging Face, which is a subset of the UNSW bearing run-to-failure dataset ([https://data.mendeley.com/datasets/h4df4mgrfb/3](https://data.mendeley.com/datasets/h4df4mgrfb/3)).
+
+### Dataset Characteristics
+- Horizontal acceleration (accH) measurements
+- Test 1 and Test 3 from the original dataset
+- Sampling frequency: 51200 Hz
+- Operating conditions:
+  - Speed: 6.0 Hz
+  - Radial load: 10.5 kN
+- Fault characteristics:
+  - Defect sizes: 1.0 mm (Test 1) and 0.5 mm (Test 3)
+  - Defect type: Ball Pass Frequency Outer race (BPFO)
+
+The image above illustrates the bearing degradation process captured in both test datasets. Test #1 provides complete run-to-failure data for training, while Test #3 demonstrates the prediction scenario where RUL needs to be estimated from a current state.
+
+### Data Structure
+Each sample in the dataset contains:
+- Signal data (raw acceleration measurements)
+- Signal length
+- Sampling frequency
+- Operating parameters (speed, load)
+- Fault information (defect size, type)
+
+
 
 ## Repository Structure
 
@@ -42,31 +69,7 @@ bearing-rul-prediction/
 └── main.py               # Main script to run the pipeline
 ```
 
-## Data
 
-The project uses the "alidi/bearing-run2failure-unsw" dataset from Hugging Face, which is a subset of the UNSW bearing run-to-failure dataset. The dataset includes:
-
-### Dataset Characteristics
-- Horizontal acceleration (accH) measurements
-- Test 1 and Test 3 from the original dataset
-- Sampling frequency: 51200 Hz
-- Operating conditions:
-  - Speed: 6.0 Hz
-  - Radial load: 10.5 kN
-- Fault characteristics:
-  - Defect sizes: 1.0 mm (Test 1) and 0.5 mm (Test 3)
-  - Defect type: Ball Pass Frequency Outer race (BPFO)
-
-### Data Structure
-Each sample in the dataset contains:
-- Signal data (raw acceleration measurements)
-- Signal length
-- Sampling frequency
-- Operating parameters (speed, load)
-- Fault information (defect size, type)
-
-### Source
-The original dataset is available at: [https://data.mendeley.com/datasets/h4df4mgrfb/3](https://data.mendeley.com/datasets/h4df4mgrfb/3)
 
 
 ## Getting Started
