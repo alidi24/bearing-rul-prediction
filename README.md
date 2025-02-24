@@ -100,10 +100,6 @@ To train an LSTM model:
 python main.py --model lstm --seq_length 100 --epochs 200
 ```
 
-To train an RNN model:
-```bash
-python main.py --model rnn --seq_length 100 --epochs 200
-```
 
 Additional arguments:
 - `--batch_size`: Batch size for training (default: 64)
@@ -121,6 +117,7 @@ bearing-rul-prediction/
 │   ├── __init__.py
 │   ├── lstm_model.py      # LSTM model implementation
 │   └── rnn_model.py       # RNN model implementation
+│   └── wavenet_model.py   # WaveNet model implementation  
 ├── utils/                 # Utility functions
 │   ├── __init__.py
 │   ├── data_processing.py # Data loading and preprocessing
@@ -142,7 +139,7 @@ The trained models produce several output files in the `results/` directory:
 Plots show:
 - Training and validation loss over epochs
 - Actual vs predicted normalized RUL values
-- Performance comparison between RNN and LSTM models
+- Performance comparison between validated models
 
 ## License
 
