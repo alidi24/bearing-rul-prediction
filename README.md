@@ -1,13 +1,14 @@
 # Bearing Remaining Useful Life Prediction
 
-This repository contains a deep learning project for predicting the Remaining Useful Life (RUL) of rolling element bearings using time series models. The project implements and compares two deep learning architectures:
+This repository contains a deep learning project for predicting the Remaining Useful Life (RUL) of rolling element bearings using time series models. The project implements and compares three deep learning architectures:
 - Recurrent Neural Networks (RNN)
 - Long Short-Term Memory Networks (LSTM)
+- WaveNet
 
 ## Project Overview
 
 - Time series modeling of bearing degradation using RMS health indicators
-- Implementation of both RNN and LSTM architectures for comparison
+- Implementation of RNN, LSTM, WaveNet architectures for comparison
 - Performance evaluation using MSE metric
 - Visualization of predictions against normalized RUL values
 
@@ -96,19 +97,20 @@ Each sample in the dataset contains:
 
 To train an LSTM model:
 ```bash
-python main.py --model lstm --seq_length 200 --epochs 20
+python main.py --model lstm --seq_length 100 --epochs 200
 ```
 
 To train an RNN model:
 ```bash
-python main.py --model rnn --seq_length 100 --epochs 50
+python main.py --model rnn --seq_length 100 --epochs 200
 ```
 
 Additional arguments:
-- `--batch_size`: Batch size for training (default: 32)
-- `--patience`: Patience for early stopping (default: 10)
-- `--frame_length`: Frame length for initial signal framing (default: 51200)
-- `--hop_length`: Hop length for initial signal framing (default: 12800)
+- `--batch_size`: Batch size for training (default: 64)
+- `--patience`: Patience for early stopping (default: 40)
+- `--frame_length`: Frame length for initial signal framing (default: 42000)
+- `--hop_length`: Hop length for initial signal framing (default: 21000)
+- `--filter_windows_size`: Window size for moving average filter (default: 11)
 
 
 ## Repository Structure
