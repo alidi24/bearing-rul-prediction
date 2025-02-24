@@ -2,6 +2,7 @@ import numpy as np
 import librosa
 from datasets import load_dataset
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 
 class SignalProcessor:
     def __init__(self, frame_length: int, hop_length: int):
@@ -31,14 +32,17 @@ class SignalProcessor:
             
         return frames, rms_values, metadata
 
-def smooth_rms(rms_values, window_size=22):
+def smooth_rms(rms_values, window_size=55):
     """Apply moving average filter to smooth RMS values"""
     window = np.ones(window_size) / window_size
     return np.convolve(rms_values, window, mode='valid')
 
+# Add Gaussian noise to sequences
+def add_noise(sequences, std=0.05):
+    noise = np.random.normal(0, std, sequences.shape)
+    return np.clip(sequences + noise, 0, 1)
 
-
-def prepare_data(frame_length=1024, hop_length=512, sequence_length=100):
+def prepare_data(frame_length=1024, hop_length=512, sequence_length=100, filter_window_size=55):
     """Main function to prepare data
     
     Args:
@@ -59,7 +63,7 @@ def prepare_data(frame_length=1024, hop_length=512, sequence_length=100):
     
     # Process test data
     _, rms_test, _ = processor.split_and_process(ds_test)
-    rms_test_smooth = smooth_rms(rms_test)
+    rms_test_smooth = smooth_rms(rms_test, window_size=filter_window_size)
     
     def create_sequences(data, rul, seq_length):
         sequences = []
@@ -75,21 +79,32 @@ def prepare_data(frame_length=1024, hop_length=512, sequence_length=100):
     X_train_raw = rms_train_smooth.reshape(-1, 1)
     X_test_raw = rms_test_smooth.reshape(-1, 1)
     
+    print(f"Original training time series shape: {X_train_raw.shape}")
+    
+    # Use MinMaxScaler instead of StandardScaler
+    scaler = MinMaxScaler()  
+    X_train_scaled = scaler.fit_transform(X_train_raw)
+    X_test_scaled = scaler.transform(X_test_raw)
+    
+    
     # Calculate RUL using linear degradation pattern
-    y_train_raw = np.linspace(1, 0, len(X_train_raw))
-    y_test_raw = np.linspace(1, 0, len(X_test_raw))
+    y_train = np.linspace(1, 0, len(X_train_scaled))
+    y_test = np.linspace(1, 0, len(X_test_scaled))
 
     
     # Create sequences
-    X_seq, y_seq = create_sequences(X_train_raw, y_train_raw, sequence_length)
+    X_seq, y_seq = create_sequences(X_train_scaled, y_train, sequence_length)
     
     # Split training data into train and validation sets
     X_train, X_val, y_train, y_val = train_test_split(
         X_seq, y_seq, test_size=0.2, random_state=42, shuffle=True
     )
     
+    # Data augmentation: add noise to training sequences
+    X_train = add_noise(X_train)
+    
     # Create test sequences
-    X_test, y_test = create_sequences(X_test_raw, y_test_raw, sequence_length)
+    X_test, y_test = create_sequences(X_test_scaled, y_test, sequence_length)
     
     # Reshape for RNN/LSTM [samples, timesteps, features]
     X_train = X_train.reshape(X_train.shape[0], sequence_length, 1)

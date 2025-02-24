@@ -1,18 +1,19 @@
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import (Input, Conv1D, Multiply, Add, Dense, 
+                                   Activation, Flatten, Dropout)
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import numpy as np
 
-class LSTMModel:
+class WaveNetModel:
     """
-    LSTM model for bearing RUL prediction
+    WaveNet model for bearing RUL prediction
     """
     
     def __init__(self, input_shape, learning_rate=0.00001):
         """
-        Initialize LSTM model
+        Initialize WaveNet model
         
         Parameters:
         -----------
@@ -23,9 +24,36 @@ class LSTMModel:
         """
         self.model = self._build_model(input_shape, learning_rate)
         
+    def _residual_block(self, x, dilation_rate):
+        """
+        Create a residual block with dilated convolutions
+        
+        Parameters:
+        -----------
+        x : tensor
+            Input tensor
+        dilation_rate : int
+            Dilation rate for the convolution
+        """
+        tanh_out = Conv1D(64, kernel_size=3, 
+                         dilation_rate=dilation_rate, 
+                         padding='causal')(x)
+        tanh_out = Activation('tanh')(tanh_out)
+        
+        sigm_out = Conv1D(64, kernel_size=3, 
+                         dilation_rate=dilation_rate, 
+                         padding='causal')(x)
+        sigm_out = Activation('sigmoid')(sigm_out)
+        
+        out = Multiply()([tanh_out, sigm_out])
+        out = Conv1D(64, kernel_size=1, padding='same')(out)
+        out = Dropout(0.3)(out)
+        out = Add()([out, x])
+        return out
+    
     def _build_model(self, input_shape, learning_rate):
         """
-        Build LSTM model architecture
+        Build WaveNet model architecture
         
         Parameters:
         -----------
@@ -33,26 +61,32 @@ class LSTMModel:
             Shape of input data (sequence_length, features)
         learning_rate : float
             Learning rate for Adam optimizer
-            
-        Returns:
-        --------
-        model : Sequential
-            Compiled Keras Sequential model
         """
-        model = Sequential()
-        model.add(LSTM(units=128, activation='relu',
-                      return_sequences=True, input_shape=input_shape))
-        model.add(Dropout(0.3))
+        input_layer = Input(shape=input_shape)
         
-        model.add(LSTM(units=64, activation='relu',
-                      return_sequences=True))
-        model.add(Dropout(0.3))
+        # Initial convolution
+        out = Conv1D(64, kernel_size=10, 
+                    padding='causal')(input_layer)
+        out = Activation('relu')(out)
+        out = Dropout(0.3)(out)
         
-        model.add(LSTM(units=32, activation='relu'))
-        model.add(Dropout(0.3))
+        # Residual blocks with dilated convolutions
+        skip_connections = []
+        for i in range(5):
+            out = self._residual_block(out, dilation_rate=2**i)
+            skip_connections.append(out)
         
-        model.add(Dense(units=1, activation='relu'))
+        # Combine skip connections
+        out = Add()(skip_connections)
+        out = Activation('relu')(out)
         
+        # Final convolution and dense layers
+        out = Conv1D(1, kernel_size=1, activation='relu')(out)
+        out = Flatten()(out)
+        out = Dropout(0.3)(out)
+        out = Dense(1, activation='relu')(out)
+        
+        model = Model(input_layer, out)
         model.compile(optimizer=Adam(learning_rate=learning_rate),
                      loss='mean_squared_error')
         
@@ -61,7 +95,7 @@ class LSTMModel:
     def train(self, X_train, y_train, X_val, y_val, 
               epochs=20, batch_size=32, patience=10):
         """
-        Train the LSTM model
+        Train the WaveNet model
         
         Parameters:
         -----------
@@ -79,11 +113,6 @@ class LSTMModel:
             Batch size for training
         patience : int
             Patience for early stopping
-            
-        Returns:
-        --------
-        history : History
-            Training history
         """
         early_stopping = EarlyStopping(
             monitor='val_loss',
@@ -104,34 +133,12 @@ class LSTMModel:
     def predict(self, X):
         """
         Make predictions with the model
-        
-        Parameters:
-        -----------
-        X : ndarray
-            Input features
-            
-        Returns:
-        --------
-        y_pred : ndarray
-            Predicted values
         """
         return self.model.predict(X)
     
     def evaluate(self, X, y_true):
         """
         Evaluate model performance
-        
-        Parameters:
-        -----------
-        X : ndarray
-            Input features
-        y_true : ndarray
-            True target values
-            
-        Returns:
-        --------
-        metrics : dict
-            Dictionary of evaluation metrics
         """
         y_pred = self.predict(X)
         
@@ -146,4 +153,3 @@ class LSTMModel:
         }
         
         return metrics, y_pred
-    

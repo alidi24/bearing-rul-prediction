@@ -2,9 +2,7 @@ import os
 import argparse
 import time
 import numpy as np
-from tensorflow.keras.models import load_model
 
-# Import project modules
 from utils.data_processing import prepare_data
 from utils.visualization import (
     plot_training_history, plot_validation_results, 
@@ -12,15 +10,16 @@ from utils.visualization import (
 )
 from models.lstm_model import LSTMModel
 from models.rnn_model import RNNModel
+from models.wavenet_model import WaveNetModel
 
-def train_model(model_type, sequence_length, batch_size, epochs, patience, frame_length, hop_length):
+def train_model(model_type, sequence_length, batch_size, epochs, patience, frame_length, hop_length, filter_window_size):
     """
     Train a model on the bearing RUL prediction task
     
     Parameters:
     -----------
     model_type : str
-        Type of model to train ('lstm' or 'rnn')
+        Type of model to train ('lstm' or 'rnn' or 'wavenet')
     sequence_length : int
         Length of input sequences
     batch_size : int
@@ -29,6 +28,12 @@ def train_model(model_type, sequence_length, batch_size, epochs, patience, frame
         Number of training epochs
     patience : int
         Patience for early stopping
+    frame_length : int
+        Frame length for signal processing
+    hop_length : int
+        Hop length for signal processing
+    filter_window_size : int
+        Window size for moving average filter
     """
     # Create results directory if it doesn't exist
     os.makedirs('results', exist_ok=True)
@@ -39,8 +44,10 @@ def train_model(model_type, sequence_length, batch_size, epochs, patience, frame
     X_train, X_val, y_train, y_val, X_test, y_test = prepare_data(
         frame_length=frame_length, 
         hop_length=hop_length, 
-        sequence_length=sequence_length
+        sequence_length=sequence_length,
+        filter_window_size=filter_window_size
     )
+    
     
     print(f"Training set shape: {X_train.shape}")
     print(f"Validation set shape: {X_val.shape}")
@@ -54,6 +61,8 @@ def train_model(model_type, sequence_length, batch_size, epochs, patience, frame
         model = LSTMModel(input_shape)
     elif model_type.lower() == 'rnn':
         model = RNNModel(input_shape)
+    elif model_type.lower() == 'wavenet':
+        model = WaveNetModel(input_shape)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
     
@@ -68,11 +77,9 @@ def train_model(model_type, sequence_length, batch_size, epochs, patience, frame
     
     # Evaluate on validation set
     val_metrics, y_val_pred = model.evaluate(X_val, y_val)
-    print(f"Validation metrics: {val_metrics}")
     
     # Evaluate on test set
     test_metrics, y_test_pred = model.evaluate(X_test, y_test)
-    print(f"Test metrics: {test_metrics}")
     
     
     # Plot and save results
@@ -83,37 +90,40 @@ def train_model(model_type, sequence_length, batch_size, epochs, patience, frame
     save_plot(history_fig, f"results/{model_type}_training_history.png")
     
     # Validation results plot
-    val_fig = plot_validation_results(y_val, y_val_pred)
+    val_fig = plot_validation_results(y_val, y_val_pred, val_metrics['mse'])
     save_plot(val_fig, f"results/{model_type}_validation_results.png")
     
     # Test results plot
-    test_fig = plot_test_results(y_test, y_test_pred, start_idx=90)
+    test_fig = plot_test_results(y_test, y_test_pred, test_metrics['mse'], start_idx=90)
     save_plot(test_fig, f"results/{model_type}_test_results.png")
     
-    return test_metrics
+    return test_metrics, val_metrics
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train models for bearing RUL prediction")
-    parser.add_argument('--model', type=str, choices=['lstm', 'rnn'], required=True,
-                        help='Type of model to train (lstm or rnn)')
+    parser.add_argument('--model', type=str, choices=['lstm', 'rnn', 'wavenet'], required=True,
+                        help='Type of model to train (lstm or rnn or wavenet)')
     parser.add_argument('--seq_length', type=int, default=100,
                         help='Sequence length for time series input')
-    parser.add_argument('--frame_length', type=int, default=51200,
+    parser.add_argument('--frame_length', type=int, default=42000,
                         help='Frame length for signal processing')
-    parser.add_argument('--hop_length', type=int, default=12800,
+    parser.add_argument('--hop_length', type=int, default=21000,
                         help='Hop length for signal processing')
-    parser.add_argument('--batch_size', type=int, default=32,
+    parser.add_argument('--filter_window_size', type=int, default=11,
+                        help='Window size for moving average filter')
+    parser.add_argument('--batch_size', type=int, default=64,
                         help='Batch size for training')
-    parser.add_argument('--epochs', type=int, default=50,
+    parser.add_argument('--epochs', type=int, default=200,
                         help='Number of training epochs')
-    parser.add_argument('--patience', type=int, default=10,
+    parser.add_argument('--patience', type=int, default=20,
                         help='Patience for early stopping')
     
     args = parser.parse_args()
     
-    metrics = train_model(
-        args.model, args.seq_length, args.batch_size, args.epochs, args.patience, args.frame_length, args.hop_length
+    test_metrics, val_metrics = train_model(
+        args.model, args.seq_length, args.batch_size, args.epochs, args.patience, args.frame_length, args.hop_length, args.filter_window_size
     )
     
     print(f"Model training complete.")
-    print(f"Test metrics: MSE={metrics['mse']:.6f}, RMSE={metrics['rmse']:.6f}, MAE={metrics['mae']:.6f}")
+    print(f"Validation metrics: MSE={val_metrics['mse']:.6f}, RMSE={val_metrics['rmse']:.6f}, MAE={val_metrics['mae']:.6f}")
+    print(f"Test metrics: MSE={test_metrics['mse']:.6f}, RMSE={test_metrics['rmse']:.6f}, MAE={test_metrics['mae']:.6f}")

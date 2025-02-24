@@ -19,7 +19,7 @@ def plot_training_history(history):
     plt.tight_layout()
     return plt.gcf()
 
-def plot_validation_results(y_val, y_pred):
+def plot_validation_results(y_val, y_pred, val_metric):
     """Plot actual vs predicted normalized RUL values for validation set"""
     # Sort by actual RUL in descending order (1 -> 0)
     sorted_indices = np.argsort(y_val)[::-1]
@@ -31,7 +31,7 @@ def plot_validation_results(y_val, y_pred):
     plt.plot(y_pred_sorted, label='Predicted RUL')
     plt.xlabel('Time Steps')
     plt.ylabel('Normalized RUL')
-    plt.title('Validation Set: Actual vs Predicted RUL')
+    plt.title(f"Validation Set: Actual vs Predicted RUL - MSE: {val_metric:.2f}")
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.6)
     
@@ -47,7 +47,7 @@ def plot_validation_results(y_val, y_pred):
     plt.tight_layout()
     return plt.gcf()
 
-def plot_test_results(y_test, y_pred, start_idx=0):
+def plot_test_results(y_test, y_pred, test_metric, start_idx=0):
     """Plot actual vs predicted normalized RUL values for test set"""
     y_test_subset = y_test[start_idx:]
     y_pred_subset = y_pred[start_idx:]
@@ -63,7 +63,7 @@ def plot_test_results(y_test, y_pred, start_idx=0):
     plt.xticks(tick_values, tick_labels)
     plt.xlabel('Remaining Life Percentage', fontsize=12)
     plt.ylabel('Normalized RUL', fontsize=12)
-    plt.title('Test Set: Actual vs Predicted RUL')
+    plt.title(f"Test Set: Actual vs Predicted RUL - MSE: {test_metric:.4f}")
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.6)
     

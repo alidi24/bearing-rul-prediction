@@ -10,7 +10,7 @@ class RNNModel:
     RNN model for bearing RUL prediction
     """
     
-    def __init__(self, input_shape, learning_rate=0.001):
+    def __init__(self, input_shape, learning_rate=0.00001):
         """
         Initialize RNN model
         
@@ -40,15 +40,15 @@ class RNNModel:
             Compiled Keras Sequential model
         """
         model = Sequential()
-        model.add(SimpleRNN(units=100, activation='relu',
+        model.add(SimpleRNN(units=128, activation='relu',
                           return_sequences=True, input_shape=input_shape))
-        model.add(Dropout(0.2))
-        model.add(SimpleRNN(units=50, activation='relu',
+        model.add(Dropout(0.3))
+        model.add(SimpleRNN(units=64, activation='relu',
                           return_sequences=True))
-        model.add(Dropout(0.2))
-        model.add(SimpleRNN(units=25, activation='relu'))
-        model.add(Dropout(0.2))
-        model.add(Dense(units=1, activation='linear'))
+        model.add(Dropout(0.3))
+        model.add(SimpleRNN(units=32, activation='relu'))
+        model.add(Dropout(0.3))
+        model.add(Dense(units=1, activation='relu'))
         
         model.compile(optimizer=Adam(learning_rate=learning_rate),
                      loss='mean_squared_error')
