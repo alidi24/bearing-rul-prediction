@@ -28,6 +28,13 @@ The project treats the RUL prediction problem as a sequence-to-value regression 
 
 The project uses the "alidi/bearing-run2failure-unsw" dataset from Hugging Face, which is a subset of the UNSW bearing run-to-failure dataset ([https://data.mendeley.com/datasets/h4df4mgrfb/3](https://data.mendeley.com/datasets/h4df4mgrfb/3)).
 
+> **Note:** To access the dataset, you'll need a Hugging Face account and access token:
+> ```python
+> from huggingface_hub import login
+> login(token="your_huggingface_token")
+> ```
+> To get your token: Sign up at huggingface.co → Settings → Access Tokens → Create new token
+
 ### Dataset Characteristics
 - Horizontal acceleration (accH) measurements
 - Test 1 and Test 3 from the original dataset
